@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 const RecorderApp: React.FC = () => {
   const router = useRouter();
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   const {
     startStreams,
@@ -50,11 +51,25 @@ const RecorderApp: React.FC = () => {
   } = useRecorder();
 
   const handleStartSetup = async () => {
-    const success = await startStreams();
-    if (success) {
-      setAppState(AppState.PREVIEW);
+    const error = await startStreams();
+    if (!error) {
+      // Auto-start recording immediately after stream selection
+      setAppState(AppState.RECORDING);
+    } else if (error === "permission-denied") {
+      setShowPermissionModal(true);
     }
   };
+
+  // Auto-start recording effect
+  React.useEffect(() => {
+    if (appState === AppState.RECORDING && !isRecording && canvasRef.current) {
+      // Small delay to ensure canvas is ready and streams are active
+      const timer = setTimeout(() => {
+        startRecording();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [appState, isRecording, startRecording, canvasRef]);
 
   const handleRecord = () => {
     startRecording();
@@ -142,13 +157,13 @@ const RecorderApp: React.FC = () => {
       {appState === AppState.IDLE ? (
         <LandingPage onStart={handleStartSetup} />
       ) : (
-        <main className="container mx-auto px-4 min-h-screen flex flex-col items-center justify-center relative z-10">
+        <main className="w-full h-screen flex flex-col items-center justify-center relative z-10 overflow-hidden pt-24 pb-6 px-4">
           {/* PREVIEW & RECORDING STATE */}
           {(appState === AppState.PREVIEW ||
             appState === AppState.RECORDING) && (
-            <div className="w-full max-w-6xl flex flex-col items-center gap-6 animate-fade-in-up">
+            <div className="w-full max-w-6xl flex flex-col items-center gap-6 h-full">
               {/* The Stage */}
-              <div className="relative w-full aspect-video rounded-3xl overflow-hidden glass-panel shadow-2xl border-white/5 bg-black/80 group">
+              <div className="relative w-full flex-1 min-h-0 rounded-3xl overflow-hidden glass-panel shadow-2xl border-white/5 bg-black/80 group">
                 <canvas
                   ref={canvasRef}
                   className="w-full h-full object-contain"
@@ -156,14 +171,14 @@ const RecorderApp: React.FC = () => {
                 {appState === AppState.PREVIEW && (
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                     <div className="px-6 py-3 bg-neutral-900/60 backdrop-blur-md rounded-full text-sm font-medium text-white/50 border border-white/5 flex items-center gap-2">
-                      Ready to capture
+                      Initializing capture...
                     </div>
                   </div>
                 )}
               </div>
 
               {/* MONOCHROME Control Bar */}
-              <div className="w-full max-w-4xl glass-panel rounded-[24px] p-2 flex flex-col md:flex-row items-center justify-between gap-4 relative">
+              <div className="w-full max-w-4xl glass-panel rounded-[24px] p-2 flex flex-col md:flex-row items-center justify-between gap-4 relative flex-shrink-0">
                 {/* Left Section: Inputs */}
                 <div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-start">
                   <button
@@ -298,13 +313,9 @@ const RecorderApp: React.FC = () => {
                 {/* Right Section: Action */}
                 <div className="w-full md:w-auto flex justify-end">
                   {appState === AppState.PREVIEW ? (
-                    <button
-                      onClick={handleRecord}
-                      className="group relative px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-900/20 transition-all flex items-center gap-2 overflow-hidden"
-                    >
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                      <span className="tracking-wide text-sm">REC</span>
-                    </button>
+                    <div className="px-6 py-3 text-sm font-medium text-neutral-400 animate-pulse">
+                      Starting...
+                    </div>
                   ) : (
                     <button
                       onClick={handleStop}
@@ -321,17 +332,17 @@ const RecorderApp: React.FC = () => {
 
           {/* FINISHED STATE */}
           {appState === AppState.FINISHED && (
-            <div className="w-full max-w-5xl flex flex-col items-center gap-8 animate-fade-in-up py-10">
-              <div className="text-center">
-                <h2 className="text-4xl font-bold text-white mb-2 tracking-tight">
+            <div className="w-full max-w-5xl flex flex-col items-center gap-6 h-full animate-fade-in-up">
+              <div className="text-center shrink-0">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
                   Recording Complete
                 </h2>
-                <p className="text-neutral-500">
+                <p className="text-neutral-500 text-sm md:text-base">
                   Your session has been captured successfully.
                 </p>
               </div>
 
-              <div className="relative w-full aspect-video rounded-3xl overflow-hidden glass-panel border-white/10 shadow-2xl bg-black">
+              <div className="relative w-full flex-1 min-h-0 rounded-3xl overflow-hidden glass-panel border-white/10 shadow-2xl bg-black">
                 {recordingBlob && (
                   <video
                     src={URL.createObjectURL(recordingBlob)}
@@ -341,7 +352,7 @@ const RecorderApp: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto shrink-0 pb-4">
                 <button
                   onClick={handleRetake}
                   className="px-8 py-4 rounded-xl border border-white/10 text-neutral-400 hover:text-white hover:bg-white/5 transition-all font-medium flex items-center gap-3 w-full sm:w-auto justify-center"
@@ -361,6 +372,33 @@ const RecorderApp: React.FC = () => {
             </div>
           )}
         </main>
+      )}
+
+      {/* Permission Modal */}
+      {showPermissionModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+          <div className="bg-neutral-900 border border-white/10 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+              <VideoOff className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Permissions Needed
+            </h3>
+            <p className="text-neutral-400 mb-8 leading-relaxed">
+              Crystal needs access to your camera and microphone to record.
+              Please allow access in your browser settings and try again.
+            </p>
+            <button
+              onClick={() => {
+                setShowPermissionModal(false);
+                handleStartSetup();
+              }}
+              className="w-full py-4 bg-white text-black rounded-xl font-bold hover:bg-neutral-200 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

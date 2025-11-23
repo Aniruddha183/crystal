@@ -22,7 +22,7 @@ import {
   useTransform,
   AnimatePresence,
 } from "framer-motion";
-
+import { SparklesCore } from "./ui/sparkles";
 interface LandingPageProps {
   onStart: () => void;
 }
@@ -69,23 +69,23 @@ const FAQItem: React.FC<{
     >
       <button
         onClick={onClick}
-        className="w-full py-8 px-6 text-left flex items-center justify-between gap-6 focus:outline-none group"
+        className="w-full py-6 px-4 md:py-8 md:px-6 text-left flex items-center justify-between gap-4 md:gap-6 focus:outline-none group"
       >
         <span
-          className={`text-xl font-medium transition-colors duration-300 ${
+          className={`text-lg md:text-xl font-medium transition-colors duration-300 ${
             isOpen ? "text-white" : "text-neutral-400 group-hover:text-white"
           }`}
         >
           {question}
         </span>
         <div
-          className={`relative flex-shrink-0 w-10 h-10 rounded-full border border-white/10 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+          className={`relative flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full border border-white/10 flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${
             isOpen
               ? "bg-white text-black rotate-45 border-white"
               : "bg-transparent text-white group-hover:border-white/30"
           }`}
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 md:w-5 md:h-5" />
         </div>
       </button>
       <div
@@ -94,12 +94,44 @@ const FAQItem: React.FC<{
         }`}
       >
         <div className="overflow-hidden">
-          <div className="px-6 pb-8 text-neutral-400 leading-relaxed text-lg max-w-3xl font-light">
+          <div className="px-4 pb-6 md:px-6 md:pb-8 text-neutral-400 leading-relaxed text-base md:text-lg max-w-3xl font-light">
             {answer}
           </div>
         </div>
       </div>
     </div>
+  );
+};
+
+// Letter Reveal Component
+const LetterReveal = ({
+  text,
+  className,
+  delay = 0,
+}: {
+  text: string;
+  className?: string;
+  delay?: number;
+}) => {
+  const letters = text.split("");
+  return (
+    <span className={className}>
+      {letters.map((letter, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{
+            duration: 0.5,
+            delay: delay + i * 0.05,
+            ease: "easeOut",
+          }}
+          className="inline-block"
+        >
+          {letter === " " ? "\u00A0" : letter}
+        </motion.span>
+      ))}
+    </span>
   );
 };
 
@@ -176,33 +208,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
       </nav>
 
       {/* Main Scrollable Area */}
-      <div className="flex-1 flex flex-col items-center pt-32 px-6">
+      <div className="flex-1 flex flex-col items-center pt-24 px-6">
         {/* Hero Section */}
         <motion.div
           style={{ y: heroY, opacity: heroOpacity }}
-          className="text-center max-w-5xl mx-auto mb-32"
+          className="relative text-center max-w-5xl mx-auto mb-32 z-10"
         >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8 hover:bg-white/10 transition-colors cursor-default"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs font-semibold text-neutral-300 tracking-wider uppercase">
-              System Operational
-            </span>
-          </motion.div>
+          {/* Sparkles Effect */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none -z-10 scale-150">
+            <SparklesCore
+              id="tsparticlesfullpage"
+              background="transparent"
+              minSize={0.6}
+              maxSize={1.4}
+              particleDensity={70}
+              className="w-full h-full"
+              particleColor="#FFFFFF"
+            />
+          </div>
+
+          {/* Spotlight/Glow Effect */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-white/5 blur-[80px] md:blur-[120px] rounded-full pointer-events-none -z-20 mix-blend-screen"></div>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.9]"
+            className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.9] relative drop-shadow-2xl"
           >
-            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-neutral-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-neutral-500 relative z-10">
               Crystal.
             </span>
+
             <br />
             <span className="text-shimmer">Capture Reality.</span>
           </motion.h1>
@@ -210,7 +247,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
             className="text-xl md:text-2xl text-neutral-400 max-w-2xl mx-auto mb-12 font-light leading-relaxed tracking-wide"
           >
             The next generation of screen recording.
@@ -221,10 +258,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             <br />
             No Account. No Sign Up. And
             <b className="text-white hover:text-white/80 transition-colors">
-              it's Free.
+              <br /> it's <span className="text-neutral-200  ">Free.</span>
             </b>
           </motion.p>
-
+          {/* <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8 hover:bg-white/10 transition-colors cursor-default"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-xs font-semibold text-neutral-300 tracking-wider uppercase">
+              System Operational
+            </span>
+          </motion.div> */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -403,23 +450,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
       {/* FAQ Section */}
       <div
         ref={faqRef}
-        className={`w-full max-w-4xl m-auto mb-32 transition-all duration-1000 ${
+        className={`w-full max-w-4xl m-auto mb-20 md:mb-32 transition-all duration-1000 ${
           faqVisible ? "reveal-visible" : "reveal-hidden"
         }`}
       >
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 md:mb-16">
           <span className="text-sm font-semibold text-neutral-400 uppercase tracking-widest mb-3 block">
             Support
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
             Common Questions
           </h2>
-          <p className="text-neutral-400 max-w-xl mx-auto">
+          <p className="text-neutral-400 max-w-xl mx-auto px-4">
             Everything you need to know about the platform.
           </p>
         </div>
 
-        <div className="glass-panel rounded-3xl overflow-hidden border border-white/5 shadow-2xl relative">
+        <div className="glass-panel rounded-2xl md:rounded-3xl overflow-hidden border border-white/5 shadow-2xl relative mx-4 md:mx-0">
           {/* Glow Effect behind FAQ */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
 
@@ -470,9 +517,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                   <input
                     type="email"
                     placeholder="email@example.com"
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
+                    className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-5 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
                   />
-                  <button className="px-6 py-3 bg-white text-black rounded-xl font-bold hover:bg-neutral-200 transition-colors">
+                  <button className="px-6 py-3 bg-white text-black rounded-xl font-bold hover:bg-neutral-200 hover:scale-105 active:scale-95 transition-all duration-300">
                     Join
                   </button>
                 </div>
@@ -590,8 +637,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
           </div>
 
           {/* Massive Footer Text */}
-          <div className="relative w-full flex justify-center items-center py-12 border-t border-white/5">
-            <h1 className="text-[15vw] font-bold leading-none text-transparent bg-clip-text bg-gradient-to-b from-neutral-800 to-black select-none tracking-tighter opacity-50">
+          <div className="relative w-full flex justify-center items-center pb-24 pt-5 md:py-0 border-t border-white/5 overflow-hidden">
+            <h1 className="text-[20vw] md:text-[15vw] font-bold leading-none text-transparent bg-clip-text bg-gradient-to-b from-white/30 to-white/5 select-none tracking-tighter">
               CRYSTAL
             </h1>
 
@@ -602,29 +649,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 </p>
                 <div className="flex gap-6">
                   <a
-                    href="#"
+                    target="_blank"
+                    href="https://x.com/AniruddhaTeke"
                     className="text-neutral-600 hover:text-white transition-colors"
                   >
                     <Twitter className="w-5 h-5" />
                   </a>
                   <a
-                    href="#"
+                    target="_blank"
+                    href="https://github.com/Aniruddha183"
                     className="text-neutral-600 hover:text-white transition-colors"
                   >
                     <Github className="w-5 h-5" />
                   </a>
                   <a
-                    href="#"
+                    target="_blank"
+                    href="https://www.linkedin.com/in/aniruddha-teke-0436a01a8/"
                     className="text-neutral-600 hover:text-white transition-colors"
                   >
                     <Linkedin className="w-5 h-5" />
                   </a>
-                  <a
+                  {/* <a
                     href="#"
                     className="text-neutral-600 hover:text-white transition-colors"
                   >
                     <Instagram className="w-5 h-5" />
-                  </a>
+                  </a> */}
                 </div>
               </div>
             </div>
@@ -657,11 +707,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 <X className="w-6 h-6" />
               </button>
 
-              <video
-                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+              <iframe
+                src="https://drive.google.com/file/d/1YuG79QpzRgSg4CxuQ0zfS-Ou-ZQY7inc/preview"
                 className="w-full h-full object-cover"
-                controls
-                autoPlay
+                allow="autoplay; fullscreen"
+                allowFullScreen
               />
             </motion.div>
           </motion.div>

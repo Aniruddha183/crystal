@@ -172,12 +172,19 @@ export const useRecorder = () => {
       setStreamConfig({ hasCamera: true, hasMic: true, hasScreen: true });
       setIsMicEnabled(true);
       setIsCameraEnabled(true);
-      return true;
-    } catch (err) {
+      return null; // No error
+    } catch (err: any) {
       console.error("Error starting streams", err);
       // Clean up any partial streams
       stopStreams();
-      return false;
+
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
+        return "permission-denied";
+      }
+      return "unknown-error";
     }
   };
 
@@ -382,7 +389,7 @@ export const useRecorder = () => {
     isCameraEnabled,
   ]);
 
-  const startRecording = () => {
+  const startRecording = useCallback(() => {
     if (!canvasRef.current || !screenStreamRef.current) return;
 
     // 1. Setup Audio Mixing
@@ -458,7 +465,7 @@ export const useRecorder = () => {
 
     // Start drawing loop
     drawCanvas();
-  };
+  }, [isMicEnabled, stopStreams, drawCanvas]);
 
   // Re-start draw loop if config changes while recording/previewing
   useEffect(() => {
